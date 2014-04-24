@@ -125,7 +125,7 @@ Client.prototype.connect = function (callback) {
 Client.prototype._getAConnection = function (callback) {
   var self = this;
   self.emit('log', 'info', 'Connection Config: ');
-  console.log(this);
+  // console.log(this);
 
   self.connect(function (err) {
     if (err) {
@@ -162,6 +162,7 @@ Client.prototype._getAConnection = function (callback) {
           }
           else {
             //this connection is now good
+            self.emit('log', 'info', 'Reopened #' + c.indexInPool);
             self._setHealthy(c);
             callback(null, c);
           }
