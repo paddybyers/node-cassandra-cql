@@ -31,7 +31,7 @@ function Client(options) {
   //current connection index for prepared queries
   this.prepareConnectionIndex = 0;
   this.preparedQueries = {};
-  
+
   this._createPool();
 }
 
@@ -63,7 +63,7 @@ Client.prototype._connectAllHosts = function (connectCallback) {
   var errors = [];
   this.connecting = true;
   var self = this;
-  async.each(this.connections, 
+  async.each(this.connections,
     function (c, callback) {
       c.open(function (err) {
         if (err) {
@@ -89,9 +89,9 @@ Client.prototype._connectAllHosts = function (connectCallback) {
     });
 };
 
-/** 
+/**
  * Connects to all hosts, in case the pool is disconnected.
- * @param {function} callback is called when the pool is connected (or at least 1 connected and the rest failed to connect) or it is not possible to connect 
+ * @param {function} callback is called when the pool is connected (or at least 1 connected and the rest failed to connect) or it is not possible to connect
  */
 Client.prototype.connect = function (callback) {
   if (!callback) {
@@ -124,6 +124,9 @@ Client.prototype.connect = function (callback) {
  */
 Client.prototype._getAConnection = function (callback) {
   var self = this;
+  self.emit('log', 'info', 'Connection Config: ');
+  console.log(this);
+
   self.connect(function (err) {
     if (err) {
       callback(err);
@@ -133,6 +136,7 @@ Client.prototype._getAConnection = function (callback) {
     //watch out for infinite loops
     var startTime = Date.now();
     function checkNextConnection (callback) {
+      self.emit('log', 'info', 'current connection #' + self.connectionIndex);
       self.emit('log', 'info', 'Checking next connection');
       self.connectionIndex = self.connectionIndex + 1;
       if (self.connectionIndex > self.connections.length-1) {
