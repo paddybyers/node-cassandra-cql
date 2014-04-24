@@ -587,7 +587,7 @@ Client.prototype.shutdown = function (callback) {
 };
 
 /**
- * Holds the information of the connections in which a query is prepared 
+ * Holds the information of the connections in which a query is prepared
  */
 function PreparedInfo(query) {
   this.query = query;
