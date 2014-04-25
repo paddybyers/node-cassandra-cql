@@ -158,7 +158,7 @@ Client.prototype._getAConnection = function (callback) {
             self._setUnhealthy(c);
             setTimeout(function () {
               checkNextConnection(callback);
-            }, 10);
+            }, 1000);
           }
           else {
             //this connection is now good
