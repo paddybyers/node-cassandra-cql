@@ -445,7 +445,7 @@ Client.prototype._parseBatchArgs = function (queries, consistency, options, call
  * Executes a prepared query on a given connection
  */
 Client.prototype._executeOnConnection = function (c, query, queryId, params, consistency, options, callback) {
-  this.emit('log', 'info', 'Executing prepared query "' + query + '"');
+  // this.emit('log', 'info', 'Executing prepared query "' + query + '"');
   var self = this;
   c.executePrepared(queryId, params, consistency, options, function(err, result1, result2) {
     if (self._isServerUnhealthy(err)) {
