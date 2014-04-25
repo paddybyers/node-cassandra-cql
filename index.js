@@ -69,7 +69,7 @@ Client.prototype._connectAllHosts = function (connectCallback) {
         if (err) {
           self._setUnhealthy(c);
           errors.push(err);
-          self.emit('log', 'error', 'There was an error opening connection #' + c.indexInPool, err);
+          self.emit('log', 'info', 'There was an error opening connection #' + c.indexInPool, err);
         }
         else {
           self.emit('log', 'info', 'Opened connection #' + c.indexInPool);
