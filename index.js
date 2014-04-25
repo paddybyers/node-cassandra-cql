@@ -506,7 +506,7 @@ Client.prototype._getPrepared = function (query, callback) {
  * Prepares a query on a connection. If it fails (server unhealthy) it retries all the preparing process with a new connection.
  */
 Client.prototype._prepare = function (conInfo, con, query) {
-  this.emit('log', 'info', 'Preparing the query "' + query + '" on connection #' + con.indexInPool);
+  // this.emit('log', 'info', 'Preparing the query "' + query + '" on connection #' + con.indexInPool);
   var self = this;
   con.prepare(query, function (err, result) {
     conInfo.preparing = false;
