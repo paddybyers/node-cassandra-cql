@@ -3,7 +3,7 @@
   "version": "0.5.0",
   "description": "Node.js driver for Apache Cassandra",
   "author": "Jorge Bay <jorgebaygondra@gmail.com>",
-  "contributors" :[
+  "contributors": [
     "Andrew Kish",
     "Tommy Messbauer",
     "Adam Faulkner",
@@ -30,19 +30,22 @@
   "dependencies": {
     "async": ">= 0.2.5",
     "long": ">= 1.1.2",
-    "node-uuid": "1.4.0"
+    "node-uuid": "1.4.0",
+    "simple-socket": "0.0.6"
   },
   "devDependencies": {
     "mocha": ">= 1.14.0"
   },
-  "repository": { 
-    "type" : "git", 
-    "url" : "https://github.com/jorgebay/node-cassandra-cql.git"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jorgebay/node-cassandra-cql.git"
   },
-  "bugs": { 
-    "url" : "https://github.com/jorgebay/node-cassandra-cql/issues"
+  "bugs": {
+    "url": "https://github.com/jorgebay/node-cassandra-cql/issues"
   },
-  "engines": {"node" : ">=0.10.0"},
+  "engines": {
+    "node": ">=0.10.0"
+  },
   "scripts": {
     "test": "mocha test -R spec -t 5000"
   }
