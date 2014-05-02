@@ -43,7 +43,7 @@ describe('Client', function () {
       var query = util.format("CREATE KEYSPACE %s WITH replication = {'class': 'SimpleStrategy','replication_factor': '3'};", keyspace);
       con.execute(query, function (err) {
         if (err) throw err;
-        con.close(function () {
+        con.shutdown(function () {
           callback();
         });
       });
@@ -89,17 +89,18 @@ describe('Client', function () {
     });
   });
   
-  describe('#connect()', function () {
-    it('possible to call connect multiple times in parallel', function (done) {
-      var localClient = getANewClient();
-      async.times(5, function (n, next) {
-        localClient.connect(next);
-      }, function (err) {
-        assert.ok(!err, err);
-        localClient.shutdown(done);
-      });
-    });
-  });
+  // why?
+  // describe('#connect()', function () {
+  //   it('possible to call connect multiple times in parallel', function (done) {
+  //     var localClient = getANewClient();
+  //     async.times(5, function (n, next) {
+  //       localClient.connect(next);
+  //     }, function (err) {
+  //       assert.ok(!err, err);
+  //       localClient.shutdown(done);
+  //     });
+  //   });
+  // });
   
   describe('#execute()', function () {
     it('should allow different argument lengths', function (done) {
@@ -170,16 +171,15 @@ describe('Client', function () {
       var localClient = getANewClient();
       //wait for short amount of time
       localClient.options.getAConnectionTimeout = 200;
-      //mark all connections as unhealthy
-      localClient._isHealthy = function() {
-        return false;
-      };
-      //disallow reconnection
-      localClient._canReconnect = localClient._isHealthy;
-      localClient.execute('badabing', function (err) {
-        assert.ok(err, 'Callback must return an error');
-        assert.strictEqual(err.name, 'TimeoutError', 'The error must be a TimeoutError');
-        localClient.shutdown(done);
+      // make sure to connect once
+      localClient.execute('badabing', function() {
+        // kill all connections
+        localClient.connections.forEach(function(c) { c.shutdown(); });
+        localClient.execute('badabing', function (err) {
+          assert.ok(err, 'Callback must return an error');
+          assert.strictEqual(err.name, 'TimeoutError', 'The error must be a TimeoutError');
+          localClient.shutdown(done);
+        });
       });
     });
     
@@ -331,17 +331,17 @@ describe('Client', function () {
       async.timesSeries(12, function (n, next) {
         if (n == 2) {
           //The next write attempt will fail for this connection.
-          localClient.connections[0].netClient.destroy();
+          localClient.connections[0].close();
         }
         else if (n == 6) {
           //Force to no more IO on these socket.
-          localClient.connections[0].netClient.destroy();
-          localClient.connections[1].netClient.destroy();
+          localClient.connections[0].close();
+          localClient.connections[1].close();
         }
         else if (n == 9 && localClient.connections.length > 1) {
           //Force to no more IO on this socket. The next write attempt will fail
-          localClient.connections[0].netClient.end();
-          localClient.connections[1].netClient.end();
+          localClient.connections[0].close();
+          localClient.connections[1].close();
         }
         localClient.execute('SELECT * FROM system.schema_keyspaces', function (err) {
           next(err);
@@ -359,8 +359,8 @@ describe('Client', function () {
       async.times(10, function (n, next) {
         localClient.execute('SELECT * FROM system.schema_keyspaces', function (err) {
           if (n === 3) {
-            localClient.connections[0].netClient.destroy();
-            localClient.connections[1].netClient.destroy();
+            localClient.connections[0].close();
+            localClient.connections[1].close();
           }
           next(err);
         })

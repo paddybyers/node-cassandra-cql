@@ -2,6 +2,10 @@ var events = require('events');
 var util = require('util');
 var async = require('async');
 var Connection = require('./lib/connection.js').Connection;
+
+var getResource = require('async-resource').get;
+var ensureResource = require('async-resource').ensure;
+
 var utils = require('./lib/utils.js');
 var types = require('./lib/types.js');
 
@@ -20,8 +24,12 @@ var optionsDefault = {
   //number of connections to open for each host
   poolSize: 1
 };
+
+var ids = 0;
+
 //Represents a pool of connection to multiple hosts
 function Client(options) {
+  this.id = ids++;
   events.EventEmitter.call(this);
   //Unlimited amount of listeners for internal event queues by default
   this.setMaxListeners(0);
@@ -31,6 +39,8 @@ function Client(options) {
   //current connection index for prepared queries
   this.prepareConnectionIndex = 0;
   this.preparedQueries = {};
+
+  this.getConnection = getResource(this.connect.bind(this))
   
   this._createPool();
 }
@@ -45,7 +55,8 @@ Client.prototype._createPool = function () {
   for (var poolIndex = 0; poolIndex < this.options.poolSize; poolIndex++) {
     for (var i = 0; i < this.options.hosts.length; i++) {
       var host = this.options.hosts[i].split(':');
-      var connOptions = utils.extend({}, this.options, {host: host[0], port: host[1] || 9042});
+      var port = host[1] ? parseInt(host[1]) : 9042;
+      var connOptions = utils.extend({}, this.options, {host: host[0], port: port});
       var c = new Connection(connOptions);
       c.indexInPool = (this.options.poolSize * poolIndex) + i;
       c.on('disconnect', this._removeAllPrepared.bind(this));
@@ -61,13 +72,13 @@ Client.prototype._createPool = function () {
  * @param {function} callback is called when the pool is connected (or at least 1 connected and the rest failed to connect) or it is not possible to connect 
  */
 Client.prototype.connect = function(callback) {
-  if (this.connected) return callback();
+  if (this.connected) return callback(null, this);
   
   this.emit('log', 'info', 'Connecting to all hosts');
   var errors = [];
   var self = this;
   async.each(this.connections, 
-    function (c, callback) {
+    function (c, eachCallback) {
       c.open(function (err) {
         if (err) {
           errors.push({connection: c, error: err});
@@ -75,18 +86,18 @@ Client.prototype.connect = function(callback) {
         } else {
           self.emit('log', 'info', 'Opened connection #' + c.indexInPool);
         }
-        callback();
+        eachCallback();
       });
     },
     function () {
       if (errors.length === self.connections.length) {
         errors = errors.map(function(e) { return e.error; })
-        return callback(new PoolConnectionError(error));
+        return callback(new PoolConnectionError(errors));
       }
-      this.connected = true;
+      self.connected = true;
       // start connection loop for failed connections
       errors.forEach(function(e) { errors.c.open(); });
-      callback();
+      callback(null, self);
     }
   );
 };
@@ -97,6 +108,7 @@ Client.prototype.connect = function(callback) {
  */
 Client.prototype._getAConnection = function(callback) {
   var startTime = Date.now();
+  var self = this;
 
   getConnectionLoop();
 
@@ -119,6 +131,7 @@ Client.prototype._getAConnection = function(callback) {
     setTimeout(getConnectionLoop, 500);
   }
 };
+ensureResource(Client.prototype, 'getConnection', '_getAConnection');
 
 /**
  * Executes a query on an available connection.
@@ -131,8 +144,6 @@ Client.prototype._getAConnection = function(callback) {
 Client.prototype.execute = function () {
   var args = utils.parseCommonArgs.apply(null, arguments);
   //Get stack trace before sending request
-  var stackContainer = {};
-  Error.captureStackTrace(stackContainer);
   var executeError;
   var retryCount = 0;
   var self = this;
@@ -160,7 +171,6 @@ Client.prototype.execute = function () {
     },
     function loopFinished() {
       if (executeError) {
-        utils.fixStack(stackContainer.stack, executeError);
         executeError.query = args.query;
       }
       args.callback(executeError, executionResult, retryCount);
@@ -179,10 +189,6 @@ Client.prototype.execute = function () {
 Client.prototype.executeAsPrepared = function () {
   var args = utils.parseCommonArgs.apply(null, arguments);
   var self = this;
-  //Get stack trace before sending query so the user knows where errored
-  //queries come from
-  var stackContainer = {};
-  Error.captureStackTrace(stackContainer);
 
   self._getPrepared(args.query, function preparedCallback(err, con, queryId) {
     if (self._isServerUnhealthy(err)) {
@@ -198,7 +204,6 @@ Client.prototype.executeAsPrepared = function () {
     }
     else if (err) {
       //its syntax or other normal error
-      utils.fixStack(stackContainer.stack, err);
       err.query = args.query;
       if (args.options && args.options.resultStream) {
         args.options.resultStream.emit('error', err);
@@ -316,8 +321,6 @@ Client.prototype.streamRows = Client.prototype.eachRow;
 Client.prototype.executeBatch = function (queries, consistency, options, callback) {
   var args = this._parseBatchArgs.apply(null, arguments);
   //Get stack trace before sending request
-  var stackContainer = {};
-  Error.captureStackTrace(stackContainer);
   var executeError;
   var retryCount = 0;
   var self = this;
@@ -342,9 +345,6 @@ Client.prototype.executeBatch = function (queries, consistency, options, callbac
       return self._isServerUnhealthy(executeError) && retryCount < self.options.maxExecuteRetries;
     },
     function loopFinished() {
-      if (executeError) {
-        utils.fixStack(stackContainer.stack, executeError);
-      }
       args.callback(executeError, retryCount);
     }
   );

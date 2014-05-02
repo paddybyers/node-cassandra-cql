@@ -31,7 +31,8 @@
     "async": ">= 0.2.5",
     "long": ">= 1.1.2",
     "node-uuid": "1.4.0",
-    "simple-socket": "0.0.6"
+    "simple-socket": "0.0.10",
+    "async-resource": "0.0.8"
   },
   "devDependencies": {
     "mocha": ">= 1.14.0"
