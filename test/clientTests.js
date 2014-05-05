@@ -21,6 +21,7 @@ var clientOptions = {
 describe('Client', function () {
   before(function (done) {
     setup(function () {
+      console.log('setup complete');
       client = new Client(clientOptions);
       createTable();
     });
@@ -50,6 +51,7 @@ describe('Client', function () {
     }
     
     function createTable() {
+      console.log('create table');
       client.execute(
         "CREATE TABLE sampletable2 (" +
         "id int PRIMARY KEY," +
@@ -67,6 +69,7 @@ describe('Client', function () {
         "int_sample int," +
         "inet_sample inet," +
         "text_sample text);", [], function (err) {
+        console.log('create table done', err);
           if (err) throw err;
           done();
       });
