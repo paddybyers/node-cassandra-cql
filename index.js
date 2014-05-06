@@ -60,6 +60,12 @@ Client.prototype._createPool = function () {
       var c = new Connection(connOptions);
       c.indexInPool = (this.options.poolSize * poolIndex) + i;
       c.on('disconnect', this._removeAllPrepared.bind(this));
+      var self = this;
+      c.on('log', function() {
+        var args = Array.prototype.slice.call(arguments);
+        args.unshift('log');
+        self.emit.apply(self, args); 
+      });
       this.connections.push(c);
     }
   }
