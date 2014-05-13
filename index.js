@@ -59,7 +59,10 @@ Client.prototype._createPool = function () {
       var connOptions = utils.extend({}, this.options, {host: host[0], port: port});
       var c = new Connection(connOptions);
       c.indexInPool = (this.options.poolSize * poolIndex) + i;
-      c.on('disconnect', this._removeAllPrepared.bind(this));
+      c.on('disconnect', function(c) {
+        self._removeAllPrepared(c);
+        self.emit('disconnect', c);
+      });
       var self = this;
       c.on('log', function() {
         var args = Array.prototype.slice.call(arguments);
