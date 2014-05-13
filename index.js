@@ -162,7 +162,7 @@ Client.prototype.execute = function () {
           //exit the loop
           return next(err);
         }
-        self.emit('log', 'info', util.format('connection #%d acquired, executing query: %s', c.indexInPool, args.query));
+        self.emit('log', 'query', util.format('connection #%d acquired, executing query: %s', c.indexInPool, args.query));
         c.execute(args.query, args.params, args.consistency, function(err, result) {
           executeError = err;
           executionResult = result;
@@ -204,7 +204,7 @@ Client.prototype.executeAsPrepared = function () {
         return args.callback(err);
       }
       //retry: it will get another connection
-      self.emit('log', 'info', 'Retrying to prepare "' + args.query + '"');
+      self.emit('log', 'query', 'Retrying to prepare "' + args.query + '"');
       args.options.retryCount = args.options.retryCount + 1;
       self.executeAsPrepared(args.query, args.params, args.consistency, args.options, args.callback);
     }
@@ -338,7 +338,7 @@ Client.prototype.executeBatch = function (queries, consistency, options, callbac
           //exit the loop
           return next(err);
         }
-        self.emit('log', 'info', util.format('connection #%d acquired, executing batch', c.indexInPool));
+        self.emit('log', 'query', util.format('connection #%d acquired, executing batch', c.indexInPool));
         c.executeBatch(args.queries, args.consistency, args.options, function (err) {
           executeError = err;
           next();
@@ -385,7 +385,7 @@ Client.prototype._parseBatchArgs = function (queries, consistency, options, call
  * Executes a prepared query on a given connection
  */
 Client.prototype._executeOnConnection = function (c, query, queryId, params, consistency, options, callback) {
-  this.emit('log', 'info', 'Executing prepared query "' + query + '"');
+  this.emit('log', 'query', 'Executing prepared query "' + query + '"');
   var self = this;
   c.executePrepared(queryId, params, consistency, options, function(err, result1, result2) {
     if (self._isServerUnhealthy(err)) {
@@ -396,7 +396,7 @@ Client.prototype._executeOnConnection = function (c, query, queryId, params, con
       //Query expired at the server
       //Clear the connection from prepared info and
       //trying to re-prepare query
-      self.emit('log', 'info', 'Unprepared query "' + query + '"');
+      self.emit('log', 'query', 'Unprepared query "' + query + '"');
       var preparedInfo = self.preparedQueries[query];
       preparedInfo.removeConnectionInfo(c.indexInPool);
       self.executeAsPrepared(query, params, consistency, options, callback);
@@ -443,7 +443,7 @@ Client.prototype._getPrepared = function (query, callback) {
  * Prepares a query on a connection. If it fails (server unhealthy) it retries all the preparing process with a new connection.
  */
 Client.prototype._prepare = function (conInfo, con, query) {
-  this.emit('log', 'info', 'Preparing the query "' + query + '" on connection #' + con.indexInPool);
+  this.emit('log', 'query', 'Preparing the query "' + query + '" on connection #' + con.indexInPool);
   var self = this;
   con.prepare(query, function (err, result) {
     conInfo.preparing = false;
