@@ -1,6 +1,6 @@
 {
   "name": "node-cassandra-cql",
-  "version": "0.5.0",
+  "version": "0.5.1-pre1",
   "description": "Node.js driver for Apache Cassandra",
   "author": "Jorge Bay <jorgebaygondra@gmail.com>",
   "contributors": [
@@ -31,7 +31,7 @@
     "async": ">= 0.2.5",
     "long": ">= 1.1.2",
     "node-uuid": "1.4.0",
-    "simple-socket": "git://github.com/weheartit/simple-socket.git#09216e6b58",
+    "simple-socket": "git://github.com/paddybyers/simple-socket.git#fallback-error",
     "async-resource": "0.0.8"
   },
   "devDependencies": {
